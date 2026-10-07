@@ -1,4 +1,5 @@
 use crate::action_required_manager::{ActionRequiredManager, ElicitationOutcome};
+use crate::agents::a2ui;
 use crate::agents::tool_execution::ToolCallContext;
 use crate::session_context::{SESSION_ID_HEADER, TOOL_CALL_REQUEST_ID_HEADER, WORKING_DIR_HEADER};
 #[expect(deprecated)]
@@ -753,6 +754,14 @@ impl McpClientTrait for McpClient {
         if let Some(args) = arguments {
             params = params.with_arguments(args);
         }
+        if a2ui::enabled() {
+            params
+                .meta
+                .get_or_insert_default()
+                .0
+                 .0
+                .insert(a2ui::A2UI_META_KEY.to_string(), a2ui::client_capabilities());
+        }
         let protocol_version = {
             let client = self.client.lock().await;
             client.peer_info().map(|info| info.protocol_version.clone())
@@ -1127,6 +1136,29 @@ mod tests {
         if matches!(request, ClientRequest::CallToolRequest(_)) {
             assert!(!meta.0.contains_key(TOOL_CALL_REQUEST_ID_HEADER));
         }
+    }
+
+    #[test]
+    fn test_call_tool_meta_carries_a2ui_capabilities_alongside_session_context() {
+        let mut params = CallToolRequestParams::new("render".to_string());
+        params
+            .meta
+            .get_or_insert_default()
+            .0
+             .0
+            .insert(a2ui::A2UI_META_KEY.to_string(), a2ui::client_capabilities());
+        let request = inject_session_context_into_request(
+            ClientRequest::CallToolRequest(Request::new(params)),
+            Some("session-1"),
+            None,
+            None,
+        );
+
+        let wire = serde_json::to_value(&request).unwrap();
+        let meta = &wire["params"]["_meta"];
+
+        assert_eq!(meta[a2ui::A2UI_META_KEY], a2ui::client_capabilities());
+        assert_eq!(meta[SESSION_ID_HEADER], json!("session-1"));
     }
 
     #[test_case(

@@ -1,3 +1,4 @@
+pub(crate) mod a2ui;
 mod agent;
 pub mod container;
 pub mod execute_commands;

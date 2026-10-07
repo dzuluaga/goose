@@ -33,6 +33,7 @@ use super::{
     ExtensionMutation, GooseMcpAppToolAttachment, TOOL_CALL_NOTIFICATION_CHANNEL_CAPACITY,
 };
 use crate::action_required_manager::ActionRequiredManager;
+use crate::agents::a2ui;
 use crate::agents::container::Container;
 use crate::agents::extension::{ExtensionConfig, ExtensionError, ExtensionInfo};
 use crate::agents::mcp_client::McpClientTrait;
@@ -701,6 +702,9 @@ impl ExtensionLease {
                     _ => ErrorData::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None),
                 })?;
             remove_untrusted_mcp_app_meta(&mut result);
+            if a2ui::enabled() {
+                a2ui::restrict_to_user(&mut result);
+            }
             if !is_platform_extension {
                 ExtensionMutation::take(&mut result);
             }
