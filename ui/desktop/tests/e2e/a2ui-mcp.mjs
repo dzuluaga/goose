@@ -1,9 +1,10 @@
 // A2UI-over-MCP test server (https://a2ui.org/guides/a2ui_over_mcp/).
 //
-// plan_deploy  Returns fallback text, plus a deploy confirmation surface as an
-//              application/a2ui+json resource when the client advertises A2UI.
-// a2ui_action  Handles clicks from that surface. Visible to apps only. Rebuilds the
-//              card with the outcome in place of the buttons.
+// plan_deploy     Returns fallback text, plus a deploy confirmation surface as an
+//                 application/a2ui+json resource when the client advertises A2UI.
+// search_flights  Same pattern: flight options the user can select and book.
+// a2ui_action     Handles clicks from either surface (routed by surfaceId). Visible to
+//                 apps only. Rebuilds the card with the outcome in place of the buttons.
 import { pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -52,11 +53,11 @@ export function clientRendersA2ui(meta) {
   return Array.isArray(catalogs) && catalogs.includes(BASIC_CATALOG_ID);
 }
 
-function a2uiResource(messages) {
+function a2uiResource(messages, surfaceId = SURFACE_ID) {
   return {
     type: 'resource',
     resource: {
-      uri: `a2ui://${SURFACE_ID}`,
+      uri: `a2ui://${surfaceId}`,
       mimeType: A2UI_MIME_TYPE,
       text: JSON.stringify(messages),
     },
@@ -208,7 +209,200 @@ export function outcome(name, deploy, at = new Date()) {
   };
 }
 
-const server = new McpServer({ name: 'a2ui-demo', version: '0.3.0' });
+const TRIP_SURFACE_ID = 'trip';
+const TRIP_THEME = { primaryColor: '#0F766E' };
+
+const FLIGHTS = [
+  {
+    id: 'JL1',
+    airline: 'Japan Airlines',
+    flight: 'JL 1',
+    departs: '11:15',
+    arrives: '14:40 +1',
+    duration: '11 h 25 m · nonstop',
+    price: '$879',
+    tag: 'Best timing',
+    tagIcon: 'star',
+  },
+  {
+    id: 'NH7',
+    airline: 'ANA',
+    flight: 'NH 7',
+    departs: '13:20',
+    arrives: '17:05 +1',
+    duration: '11 h 45 m · nonstop',
+    price: '$811',
+    tag: 'Cheapest',
+    tagIcon: 'payment',
+  },
+  {
+    id: 'UA837',
+    airline: 'United',
+    flight: 'UA 837',
+    departs: '09:40',
+    arrives: '13:10 +1',
+    duration: '11 h 30 m · nonstop',
+    price: '$842',
+    tag: 'Earliest arrival',
+    tagIcon: 'event',
+  },
+];
+
+const TRIP_CONTEXT = {
+  origin: { path: '/origin' },
+  destination: { path: '/destination' },
+  date: { path: '/date' },
+};
+
+/** One flight as a tile: route and times, a tag, the price, and a Select button. */
+function flightTile(flight) {
+  const id = `flight${flight.id}`;
+  return [
+    { id, component: 'Card', child: `${id}Row` },
+    {
+      id: `${id}Row`,
+      component: 'Row',
+      align: 'center',
+      children: [`${id}Info`, `${id}Price`, `${id}Select`],
+    },
+    {
+      id: `${id}Info`,
+      component: 'Column',
+      weight: 1,
+      children: [`${id}Name`, `${id}Times`, `${id}Tag`],
+    },
+    text(`${id}Name`, `${flight.airline} · ${flight.flight}`, 'h4'),
+    text(`${id}Times`, `${flight.departs} → ${flight.arrives} · ${flight.duration}`, 'caption'),
+    {
+      id: `${id}Tag`,
+      component: 'Row',
+      align: 'center',
+      children: [`${id}TagIcon`, `${id}TagText`],
+    },
+    icon(`${id}TagIcon`, flight.tagIcon),
+    text(`${id}TagText`, flight.tag, 'caption'),
+    text(`${id}Price`, flight.price, 'h2'),
+    ...button(
+      `${id}Select`,
+      'Select',
+      { name: 'book', context: { ...TRIP_CONTEXT, flight: flight.id } },
+      'primary'
+    ),
+  ];
+}
+
+/** Flight options, or with a `booking`, the booked flight in place of the options. */
+export function tripSurface({ origin, destination, date }, booking) {
+  const options = booking ? [] : FLIGHTS;
+  const confirmation = booking
+    ? [
+        ...iconRow('booked', 'check', booking.status, booking.detail),
+        {
+          id: 'bookedActions',
+          component: 'Row',
+          children: ['addCalendar', 'shareTrip'],
+        },
+        ...button('addCalendar', 'Add to calendar', { name: 'calendar' }),
+        ...button('shareTrip', 'Share itinerary', { name: 'share' }),
+      ]
+    : [];
+  return [
+    {
+      version: 'v0.9',
+      createSurface: { surfaceId: TRIP_SURFACE_ID, catalogId: BASIC_CATALOG_ID, theme: TRIP_THEME },
+    },
+    {
+      version: 'v0.9',
+      updateComponents: {
+        surfaceId: TRIP_SURFACE_ID,
+        components: [
+          { id: 'root', component: 'Card', child: 'body' },
+          {
+            id: 'body',
+            component: 'Column',
+            children: booking
+              ? ['header', 'divider', 'booked', 'bookedActions']
+              : ['header', 'divider', 'options', 'footnote'],
+          },
+          ...iconRow('header', 'locationOn', { path: '/route' }, { path: '/criteria' }, 'h3'),
+          { id: 'divider', component: 'Divider' },
+          ...(booking
+            ? confirmation
+            : [
+                {
+                  id: 'options',
+                  component: 'Column',
+                  children: options.map((flight) => `flight${flight.id}`),
+                },
+                ...options.flatMap(flightTile),
+                text('footnote', 'Prices include taxes · economy · 1 adult', 'caption'),
+              ]),
+        ],
+      },
+    },
+    {
+      version: 'v0.9',
+      updateDataModel: {
+        surfaceId: TRIP_SURFACE_ID,
+        path: '/',
+        value: {
+          route: `${origin} → ${destination}`,
+          criteria: `${date} · nonstop only · aisle seat · under $900`,
+          origin,
+          destination,
+          date,
+        },
+      },
+    },
+  ];
+}
+
+/** Rebuilds the trip card with the booked flight; v0.9 can't delete single components. */
+export function booking(trip, flightId) {
+  const flight = FLIGHTS.find((candidate) => candidate.id === flightId) ?? FLIGHTS[0];
+  const result = {
+    status: `Booked ${flight.airline} ${flight.flight} · ${flight.price}`,
+    detail: `${trip.date} · ${flight.departs} → ${flight.arrives} · seat 32C (aisle) · confirmation 7Q2K8L`,
+  };
+  return {
+    status: result.status,
+    messages: [
+      { version: 'v0.9', deleteSurface: { surfaceId: TRIP_SURFACE_ID } },
+      ...tripSurface(trip, result),
+    ],
+  };
+}
+
+const server = new McpServer({ name: 'a2ui-demo', version: '0.4.0' });
+
+server.registerTool(
+  'search_flights',
+  {
+    title: 'Search flights',
+    description: 'Find flights for a trip and let the user pick one to book.',
+    inputSchema: {
+      origin: z.string().describe('Origin airport code, e.g. SFO'),
+      destination: z.string().describe('Destination airport code, e.g. HND'),
+      date: z.string().describe('Travel date, e.g. Thu, Oct 15'),
+    },
+  },
+  async (args, extra) => {
+    const summary = FLIGHTS.map(
+      (flight, index) =>
+        `${index + 1}) ${flight.flight} ${flight.departs} → ${flight.arrives}, ${flight.price}`
+    ).join('; ');
+    const content = [
+      {
+        type: 'text',
+        text: `${args.origin} → ${args.destination} on ${args.date}: ${summary}. Ask the user which one to book.`,
+      },
+    ];
+    if (clientRendersA2ui(extra._meta)) {
+      content.push(a2uiResource(tripSurface(args), TRIP_SURFACE_ID));
+    }
+    return { content };
+  }
+);
 
 server.registerTool(
   'plan_deploy',
@@ -246,7 +440,21 @@ server.registerTool(
     },
     _meta: { ui: { visibility: ['app'] } },
   },
-  async ({ name, context }) => {
+  async ({ name, surfaceId, context }) => {
+    if (surfaceId === TRIP_SURFACE_ID) {
+      if (name !== 'book') {
+        return { content: [{ type: 'text', text: `${name}: not available in this demo` }] };
+      }
+      const trip = {
+        origin: String(context.origin ?? ''),
+        destination: String(context.destination ?? ''),
+        date: String(context.date ?? ''),
+      };
+      const { status, messages } = booking(trip, String(context.flight ?? ''));
+      return {
+        content: [{ type: 'text', text: status }, a2uiResource(messages, TRIP_SURFACE_ID)],
+      };
+    }
     const { status, messages } = outcome(name, {
       service: String(context.service ?? ''),
       version: String(context.version ?? ''),
