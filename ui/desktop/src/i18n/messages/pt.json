@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "Remover imagem da mensagem"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "A ação falhou: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Recentes"
   },

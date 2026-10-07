@@ -19,6 +19,8 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { ContentBlock } from '../types/message';
 
 import McpAppRenderer from './McpApps/McpAppRenderer';
+import { A2uiToolResultSlot } from './A2ui/A2uiToolResultSlot';
+import { getToolResultContent } from '../utils/toolResultContent';
 import ToolApprovalButtons from './ToolApprovalButtons';
 import { defineMessages, useIntl } from '../i18n';
 
@@ -138,20 +140,6 @@ function getSubagentSessionId(
   }
 
   return null;
-}
-
-function getToolResultContent(toolResult: Record<string, unknown>): ContentBlock[] {
-  if (toolResult.status === 'error') {
-    return typeof toolResult.error === 'string' ? [{ type: 'text', text: toolResult.error }] : [];
-  }
-  if (toolResult.status !== 'success') {
-    return [];
-  }
-  const value = toolResult.value as ToolResultValue;
-  return value.content.filter((item) => {
-    const annotations = (item as { annotations?: { audience?: string[] } }).annotations;
-    return !annotations?.audience || annotations.audience.includes('user');
-  });
 }
 
 interface McpAppWrapperProps {
@@ -307,6 +295,14 @@ export default function ToolCallWithResponse({
           toolResponse={toolResponse}
           sessionId={sessionId}
           append={append}
+        />
+      )}
+
+      {shouldShowMcpContent && toolResponse && (
+        <A2uiToolResultSlot
+          toolCallName={toolCall.name}
+          toolResult={toolResponse.toolResult}
+          sessionId={sessionId}
         />
       )}
     </>

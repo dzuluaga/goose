@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "Xóa hình ảnh khỏi tin nhắn"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "Hành động không thành công: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Gần đây"
   },

@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "संदेश से छवि हटाएँ"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "कार्रवाई विफल रही: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "हाल के"
   },

@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "从消息中移除图片"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "操作失败：{reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "最近"
   },

@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "メッセージから画像を削除"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "アクションに失敗しました: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "最近"
   },

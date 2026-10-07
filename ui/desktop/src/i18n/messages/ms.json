@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "Alih keluar imej daripada mesej"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "Tindakan gagal: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Terkini"
   },

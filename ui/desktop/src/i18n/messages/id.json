@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "Hapus gambar dari pesan"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "Tindakan gagal: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Terbaru"
   },

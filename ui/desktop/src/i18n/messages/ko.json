@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "메시지에서 이미지 제거"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "작업이 실패했습니다: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "최근"
   },

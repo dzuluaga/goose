@@ -1,4 +1,7 @@
 {
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "The action failed: {reason}"
+  },
   "acpReadinessPanel.adapterFound": {
     "defaultMessage": "ACP adapter found"
   },

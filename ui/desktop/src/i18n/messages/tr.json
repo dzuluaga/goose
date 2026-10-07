@@ -4628,6 +4628,9 @@
   "userMessage.removeImageFromEdit": {
     "defaultMessage": "Görseli mesajdan kaldır"
   },
+  "a2uiToolResult.actionFailed": {
+    "defaultMessage": "İşlem başarısız oldu: {reason}"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Son kullanılan"
   },
