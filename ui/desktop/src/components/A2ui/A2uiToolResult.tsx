@@ -68,7 +68,7 @@ export default function A2uiToolResult({
   );
 
   return (
-    <div className="mt-3 rounded-lg border border-border-primary p-4">
+    <div className="mt-3">
       <A2uiSurfaces
         messages={messages}
         onAction={actionTarget ? sendAction : undefined}

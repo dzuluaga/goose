@@ -6,8 +6,10 @@ import {
   type ProcessableMessagePayload,
   type SurfaceModel,
 } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, basicCatalog, type ReactComponentImplementation } from '@a2ui/react/v0_9';
+import { A2uiSurface, type ReactComponentImplementation } from '@a2ui/react/v0_9';
 import type { A2uiMessage } from './a2uiPayload';
+import { gooseCatalog } from './gooseCatalog';
+import './a2uiTheme.css';
 
 export type A2uiActionHandler = (action: ActionPayload) => void | Promise<void>;
 
@@ -56,7 +58,7 @@ function processMessages(
   messages: readonly A2uiMessage[],
   onAction: A2uiActionHandler
 ): ProcessedSurfaces {
-  const processor: Processor = new MessageProcessor([basicCatalog], onAction, {
+  const processor: Processor = new MessageProcessor([gooseCatalog], onAction, {
     validationConfig: STRICT_VALIDATION,
   });
   try {
