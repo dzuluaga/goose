@@ -49,6 +49,7 @@
     "i18n:validate-locale": "node scripts/i18n-validate-locale.js"
   },
   "dependencies": {
+    "@a2ui/react": "0.12.0",
     "@aaif/goose-acp-client": "workspace:*",
     "@agentclientprotocol/sdk": "1.5.0",
     "@mcp-ui/client": "6.1.0",
