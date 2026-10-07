@@ -12,23 +12,30 @@ import { z } from 'zod';
 const A2UI_MIME_TYPE = 'application/a2ui+json';
 const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
 const SURFACE_ID = 'deploy';
+const THEME = { primaryColor: '#6D28D9' };
+
+const STATS = [
+  { id: 'statTests', value: '412', label: 'Tests passed' },
+  { id: 'statLatency', value: '182 ms', label: 'Canary p95' },
+  { id: 'statErrors', value: '0', label: 'Errors in 20 min' },
+];
 
 const CHECKS = [
   {
     id: 'tests',
-    mark: '✓',
-    label: '412 tests passed',
+    icon: 'check',
+    label: 'All tests green',
     detail: 'Unit and integration · 3 min 12 s',
   },
   {
     id: 'canary',
-    mark: '✓',
+    icon: 'check',
     label: 'Canary healthy',
-    detail: '5% of traffic for 20 min · p95 182 ms · 0 errors',
+    detail: '5% of traffic for 20 min · no regressions',
   },
   {
     id: 'migration',
-    mark: '⚠',
+    icon: 'warning',
     label: 'Includes a DB migration',
     detail: 'Adds an index on orders.created_at · reversible',
   },
@@ -61,6 +68,10 @@ function text(id, value, variant) {
   return { id, component: 'Text', text: value, ...(variant && { variant }) };
 }
 
+function icon(id, name) {
+  return { id, component: 'Icon', name };
+}
+
 function button(id, label, event, variant) {
   return [
     {
@@ -74,34 +85,62 @@ function button(id, label, event, variant) {
   ];
 }
 
-function checkRow({ id, mark, label, detail }) {
+/** An icon badge beside a label and a muted detail line. */
+function iconRow(id, iconName, label, detail, labelVariant = 'h5') {
   return [
-    { id, component: 'Row', align: 'start', children: [`${id}Mark`, `${id}Body`] },
-    text(`${id}Mark`, mark, 'h5'),
+    { id, component: 'Row', align: 'center', children: [`${id}Icon`, `${id}Body`] },
+    icon(`${id}Icon`, iconName),
     { id: `${id}Body`, component: 'Column', children: [`${id}Label`, `${id}Detail`] },
-    text(`${id}Label`, label, 'h5'),
+    text(`${id}Label`, label, labelVariant),
     text(`${id}Detail`, detail, 'caption'),
   ];
 }
 
-function actionComponents(result) {
-  if (result) {
-    return [
-      { id: 'actions', component: 'Column', children: ['outcomeDetail'] },
-      text('outcomeDetail', result.detail, 'caption'),
-    ];
-  }
+/** A nested Card, which clients may draw as a tile. */
+function stat({ id, value, label }) {
   return [
-    { id: 'actions', component: 'Row', children: ['confirm', 'reject'] },
-    ...button('confirm', 'Confirm deploy', { name: 'confirm', context: DEPLOY_CONTEXT }, 'primary'),
-    ...button('reject', 'Reject', { name: 'reject', context: DEPLOY_CONTEXT }),
+    { id, component: 'Card', weight: 1, child: `${id}Body` },
+    { id: `${id}Body`, component: 'Column', children: [`${id}Value`, `${id}Label`] },
+    text(`${id}Value`, value, 'h2'),
+    text(`${id}Label`, label, 'caption'),
   ];
+}
+
+function statusAndActions(result) {
+  const status = result
+    ? iconRow('status', result.icon, result.status, result.detail)
+    : iconRow(
+        'status',
+        'info',
+        'Waiting for your confirmation',
+        'Rollout starts as soon as you confirm'
+      );
+  const actions = result
+    ? []
+    : [
+        { id: 'actions', component: 'Row', children: ['confirm', 'reject'] },
+        ...button(
+          'confirm',
+          'Confirm deploy',
+          { name: 'confirm', context: DEPLOY_CONTEXT },
+          'primary'
+        ),
+        ...button('reject', 'Reject', { name: 'reject', context: DEPLOY_CONTEXT }),
+      ];
+  return {
+    children: result ? ['status'] : ['status', 'actions'],
+    components: [...status, ...actions],
+  };
 }
 
 /** The whole deploy card. With a `result`, the actions are replaced by the outcome. */
 export function deploySurface({ service, version, environment }, result) {
+  const footer = statusAndActions(result);
   return [
-    { version: 'v0.9', createSurface: { surfaceId: SURFACE_ID, catalogId: BASIC_CATALOG_ID } },
+    {
+      version: 'v0.9',
+      createSurface: { surfaceId: SURFACE_ID, catalogId: BASIC_CATALOG_ID, theme: THEME },
+    },
     {
       version: 'v0.9',
       updateComponents: {
@@ -111,19 +150,17 @@ export function deploySurface({ service, version, environment }, result) {
           {
             id: 'body',
             component: 'Column',
-            children: ['header', 'divider1', 'checks', 'divider2', 'status', 'actions'],
+            children: ['header', 'stats', 'divider1', 'checks', 'divider2', 'footer'],
           },
-          { id: 'header', component: 'Column', children: ['title', 'subtitle'] },
-          text('title', { path: '/title' }, 'h3'),
-          text('subtitle', { path: '/subtitle' }, 'caption'),
+          ...iconRow('header', 'upload', { path: '/title' }, { path: '/subtitle' }, 'h3'),
+          { id: 'stats', component: 'Row', children: STATS.map((s) => s.id) },
+          ...STATS.flatMap(stat),
           { id: 'divider1', component: 'Divider' },
           { id: 'checks', component: 'Column', children: CHECKS.map((check) => check.id) },
-          ...CHECKS.flatMap(checkRow),
+          ...CHECKS.flatMap((check) => iconRow(check.id, check.icon, check.label, check.detail)),
           { id: 'divider2', component: 'Divider' },
-          { id: 'status', component: 'Column', children: ['statusLabel', 'statusValue'] },
-          text('statusLabel', 'Status', 'caption'),
-          text('statusValue', { path: '/status' }, 'h5'),
-          ...actionComponents(result),
+          { id: 'footer', component: 'Column', children: footer.children },
+          ...footer.components,
         ],
       },
     },
@@ -133,12 +170,11 @@ export function deploySurface({ service, version, environment }, result) {
         surfaceId: SURFACE_ID,
         path: '/',
         value: {
-          title: `${service} ${version} → ${environment}`,
+          title: `Deploy ${service} ${version} to ${environment}`,
           subtitle: `Requested via goose · ${environment} · 3 regions`,
           service,
           version,
           environment,
-          status: result?.status ?? 'Waiting for your confirmation',
         },
       },
     },
@@ -154,10 +190,15 @@ export function outcome(name, deploy, at = new Date()) {
   const result =
     name === 'confirm'
       ? {
-          status: `✓ Deployed ${deploy.version} to ${deploy.environment}`,
+          icon: 'check',
+          status: `Deployed ${deploy.version} to ${deploy.environment}`,
           detail: `Rolled out to 3 regions at ${time} UTC · canary promoted · migration applied`,
         }
-      : { status: 'Deploy cancelled', detail: `Cancelled at ${time} UTC · nothing was changed` };
+      : {
+          icon: 'close',
+          status: 'Deploy cancelled',
+          detail: `Cancelled at ${time} UTC · nothing was changed`,
+        };
   return {
     status: result.status,
     messages: [
@@ -167,7 +208,7 @@ export function outcome(name, deploy, at = new Date()) {
   };
 }
 
-const server = new McpServer({ name: 'a2ui-demo', version: '0.2.0' });
+const server = new McpServer({ name: 'a2ui-demo', version: '0.3.0' });
 
 server.registerTool(
   'plan_deploy',
