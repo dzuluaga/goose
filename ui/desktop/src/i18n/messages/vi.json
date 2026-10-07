@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "Hành động không thành công: {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "Đang xử lý…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Gần đây"
   },

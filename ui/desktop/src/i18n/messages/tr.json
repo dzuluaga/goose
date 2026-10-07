@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "İşlem başarısız oldu: {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "İşleniyor…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Son kullanılan"
   },

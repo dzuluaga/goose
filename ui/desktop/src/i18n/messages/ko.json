@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "작업이 실패했습니다: {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "처리 중…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "최근"
   },

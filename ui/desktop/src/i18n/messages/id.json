@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "Tindakan gagal: {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "Sedang diproses…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Terbaru"
   },

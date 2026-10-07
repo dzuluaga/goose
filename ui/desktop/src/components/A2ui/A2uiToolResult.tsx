@@ -2,6 +2,7 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { callMcpAppTool } from '../../acp/mcp-apps';
 import { defineMessages, useIntl } from '../../i18n';
 import type { ContentBlock } from '../../types/message';
+import { A2uiActionPending } from './a2uiActionState';
 import { A2uiSurfaces, type A2uiActionHandler } from './A2uiSurfaces';
 import { extractA2uiPayloads, type A2uiMessage } from './a2uiPayload';
 
@@ -11,6 +12,10 @@ const i18n = defineMessages({
   actionFailed: {
     id: 'a2uiToolResult.actionFailed',
     defaultMessage: 'The action failed: {reason}',
+  },
+  actionPending: {
+    id: 'a2uiToolResult.actionPending',
+    defaultMessage: 'Working…',
   },
 });
 
@@ -34,7 +39,9 @@ export default function A2uiToolResult({
 }: A2uiToolResultProps) {
   const intl = useIntl();
   const [messages, setMessages] = useState(initialMessages);
+  const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
 
   const sendAction = useCallback<A2uiActionHandler>(
     async (action) => {
@@ -42,6 +49,7 @@ export default function A2uiToolResult({
         return;
       }
       setActionError(null);
+      setPending(true);
       try {
         const { name, surfaceId, sourceComponentId, timestamp, context } = action;
         const result = await callMcpAppTool(
@@ -50,35 +58,47 @@ export default function A2uiToolResult({
           A2UI_ACTION_TOOL,
           { name, surfaceId, sourceComponentId, timestamp, context }
         );
+        const content = result.content as ContentBlock[];
         if (result.isError) {
-          setActionError(textOf(result.content as ContentBlock[]) || action.name);
+          setActionError(textOf(content) || name);
           return;
         }
-        const updates = extractA2uiPayloads(result.content as ContentBlock[]).flatMap((payload) =>
+        const updates = extractA2uiPayloads(content).flatMap((payload) =>
           payload.status === 'accepted' ? payload.messages : []
         );
         if (updates.length > 0) {
           setMessages((current) => [...current, ...updates]);
         }
+        setAnnouncement(textOf(content));
       } catch (error) {
         setActionError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setPending(false);
       }
     },
     [actionTarget]
   );
 
   return (
-    <div className="mt-3">
-      <A2uiSurfaces
-        messages={messages}
-        onAction={actionTarget ? sendAction : undefined}
-        fallback={fallback}
-      />
+    <div className="mt-3" aria-busy={pending}>
+      <A2uiActionPending.Provider value={pending}>
+        <A2uiSurfaces
+          messages={messages}
+          onAction={actionTarget ? sendAction : undefined}
+          fallback={fallback}
+        />
+      </A2uiActionPending.Provider>
+      {pending && (
+        <p className="mt-2 text-xs text-text-secondary">{intl.formatMessage(i18n.actionPending)}</p>
+      )}
       {actionError && (
-        <p role="alert" className="mt-3 text-sm text-text-danger">
+        <p role="alert" className="mt-2 text-sm text-text-danger">
           {intl.formatMessage(i18n.actionFailed, { reason: actionError })}
         </p>
       )}
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
     </div>
   );
 }

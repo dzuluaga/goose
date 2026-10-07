@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IntlTestWrapper } from '../../../i18n/test-utils';
 import A2uiToolResult from '../A2uiToolResult';
@@ -71,6 +71,34 @@ describe('A2uiToolResult', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('app tool calls require auto mode');
     expect(screen.getByRole('button', { name: 'Confirm deploy' })).toBeInTheDocument();
+  });
+
+  it('disables actions and shows progress until the server replies', async () => {
+    let reply: (value: unknown) => void = () => {};
+    callMcpAppTool.mockReturnValue(new Promise((resolve) => (reply = resolve)));
+    renderResult({ actionTarget: ACTION_TARGET });
+
+    await clickConfirm();
+
+    expect(await screen.findByText('Working…')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm deploy' })).toBeDisabled();
+
+    reply({ content: [{ type: 'text', text: 'Deployed v2.3' }], isError: false });
+
+    await waitFor(() => expect(screen.queryByText('Working…')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Confirm deploy' })).toBeEnabled();
+  });
+
+  it('announces the outcome to assistive technology', async () => {
+    callMcpAppTool.mockResolvedValue({
+      content: [{ type: 'text', text: 'Deployed v2.3' }, a2uiResource([titleUpdate('Live')])],
+      isError: false,
+    });
+    renderResult({ actionTarget: ACTION_TARGET });
+
+    await clickConfirm();
+
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Deployed v2.3'));
   });
 
   it('sends nothing without an action target', async () => {

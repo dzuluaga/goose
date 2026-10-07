@@ -2,6 +2,9 @@
    surface container, so it outranks the renderer's :where(:root) defaults and follows
    goose's light and dark themes. */
 .a2ui-surfaces {
+  max-width: 600px;
+  --a2ui-row-gap: 0.75rem;
+
   --a2ui-color-surface: var(--color-background-primary);
   --a2ui-color-on-surface: var(--color-text-primary);
   --a2ui-color-primary: var(--color-background-inverse);
@@ -34,6 +37,10 @@
 
 .a2ui-card:not([data-accent]) .a2ui-icon-accent {
   color: var(--color-text-inverse);
+}
+
+.a2ui-glyph-accent {
+  color: var(--a2ui-accent, var(--color-text-primary));
 }
 
 .a2ui-tile {

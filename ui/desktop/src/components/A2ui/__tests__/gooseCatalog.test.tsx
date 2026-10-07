@@ -105,6 +105,44 @@ describe('gooseCatalog', () => {
     expect(tile?.style.flexGrow).toBe('2');
   });
 
+  it('uses the accessibility label as the button name', async () => {
+    const messages = confirmationSurface('Ship v2.3?');
+    const update = messages[1].updateComponents as { components: Record<string, unknown>[] };
+    update.components = update.components.map((component) =>
+      component.id === 'confirm'
+        ? { ...component, accessibility: { label: 'Deploy api-gateway v2.3 to production' } }
+        : component
+    );
+
+    render(<A2uiSurfaces messages={messages} fallback="fallback" />);
+
+    expect(
+      await screen.findByRole('button', { name: 'Deploy api-gateway v2.3 to production' })
+    ).toBeInTheDocument();
+  });
+
+  it('draws icons inside tiles as plain glyphs, not badges', () => {
+    const messages: A2uiMessage[] = [
+      { version: 'v0.9', createSurface: { surfaceId: 'tiles', catalogId: basicCatalog.id } },
+      {
+        version: 'v0.9',
+        updateComponents: {
+          surfaceId: 'tiles',
+          components: [
+            { id: 'root', component: 'Card', child: 'tile' },
+            { id: 'tile', component: 'Card', child: 'tag' },
+            { id: 'tag', component: 'Icon', name: 'star' },
+          ],
+        },
+      },
+    ];
+
+    const { container } = render(<A2uiSurfaces messages={messages} fallback="fallback" />);
+
+    expect(container.querySelector('.a2ui-tile svg')).not.toBeNull();
+    expect(container.querySelector('.a2ui-tile span.rounded-full')).toBeNull();
+  });
+
   it('tints icons by meaning', () => {
     const { container } = render(
       <A2uiSurfaces messages={themedCard(undefined)} fallback="fallback" />

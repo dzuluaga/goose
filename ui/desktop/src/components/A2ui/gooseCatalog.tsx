@@ -9,6 +9,7 @@ import { ButtonApi, CardApi, IconApi, TextApi } from '@a2ui/web_core/v0_9/basic_
 import { cn } from '../../utils';
 import { Button } from '../ui/button';
 import { resolveAccent } from './a2uiAccent';
+import { A2uiActionPending } from './a2uiActionState';
 import { ICONS, toneOf, type IconTone } from './gooseIcons';
 
 const BUTTON_VARIANTS = {
@@ -16,24 +17,31 @@ const BUTTON_VARIANTS = {
   borderless: 'ghost',
 } as const;
 
-const GooseButton = createComponentImplementation(ButtonApi, ({ props, buildChild }) => (
-  <Button
-    size="sm"
-    variant={BUTTON_VARIANTS[props.variant as keyof typeof BUTTON_VARIANTS] ?? 'outline'}
-    className={cn(props.variant === 'primary' && 'a2ui-button-primary')}
-    onClick={props.action}
-    disabled={props.isValid === false}
-  >
-    {props.child ? buildChild(props.child) : null}
-  </Button>
-));
+/** Disabled while an action is pending, so a second click can't send it twice. */
+const GooseButton = createComponentImplementation(ButtonApi, ({ props, buildChild }) => {
+  const pending = useContext(A2uiActionPending);
+  const label =
+    typeof props.accessibility?.label === 'string' ? props.accessibility.label : undefined;
+  return (
+    <Button
+      size="sm"
+      variant={BUTTON_VARIANTS[props.variant as keyof typeof BUTTON_VARIANTS] ?? 'outline'}
+      className={cn('h-7 px-3 text-[13px]', props.variant === 'primary' && 'a2ui-button-primary')}
+      onClick={props.action}
+      disabled={props.isValid === false || pending}
+      aria-label={label}
+    >
+      {props.child ? buildChild(props.child) : null}
+    </Button>
+  );
+});
 
 const TEXT_STYLES: Record<string, string> = {
-  h1: 'text-3xl font-semibold tracking-tight',
-  h2: 'text-2xl font-semibold tracking-tight',
-  h3: 'text-lg font-semibold',
-  h4: 'text-base font-semibold',
-  h5: 'text-sm font-medium',
+  h1: 'text-2xl font-semibold tracking-tight',
+  h2: 'text-xl font-semibold tracking-tight',
+  h3: 'text-base font-semibold',
+  h4: 'text-sm font-semibold',
+  h5: 'text-[13px] font-medium',
   caption: 'text-xs text-text-secondary',
   body: 'text-sm',
 };
@@ -41,10 +49,12 @@ const TEXT_STYLES: Record<string, string> = {
 /** Renders text literally: A2UI payloads are untrusted, so no Markdown or HTML. */
 const GooseText = createComponentImplementation(TextApi, ({ props }) => {
   const text = typeof props.text === 'string' ? props.text : String(props.text ?? '');
-  return <span className={TEXT_STYLES[props.variant ?? 'body'] ?? TEXT_STYLES.body}>{text}</span>;
+  const style = TEXT_STYLES[props.variant ?? 'body'] ?? TEXT_STYLES.body;
+  return <span className={cn('tabular-nums', style)}>{text}</span>;
 });
 
-const InsideCard = createContext(false);
+type CardLevel = 'top' | 'card' | 'tile';
+const CardLevelContext = createContext<CardLevel>('top');
 
 /**
  * A top-level card carries the surface accent: a top band, and a variable its children use.
@@ -52,14 +62,14 @@ const InsideCard = createContext(false);
  * stacking bordered cards.
  */
 const GooseCard = createComponentImplementation(CardApi, ({ props, buildChild, context }) => {
-  const nested = useContext(InsideCard);
+  const level = useContext(CardLevelContext);
   const child = props.child ? buildChild(props.child) : null;
   const weight: CSSProperties | undefined =
     typeof props.weight === 'number' ? { flex: props.weight, minWidth: 0 } : undefined;
-  if (nested) {
+  if (level !== 'top') {
     return (
-      <div className="a2ui-tile rounded-lg p-3" style={weight}>
-        {child}
+      <div className="a2ui-tile rounded-lg px-3 py-2.5" style={weight}>
+        <CardLevelContext.Provider value="tile">{child}</CardLevelContext.Provider>
       </div>
     );
   }
@@ -70,16 +80,16 @@ const GooseCard = createComponentImplementation(CardApi, ({ props, buildChild, c
       style={{ ...weight, ...(accent && ({ '--a2ui-accent': accent } as CSSProperties)) }}
       data-accent={accent ? '' : undefined}
     >
-      <div className="a2ui-card-band h-1" />
-      <div className="p-5">
-        <InsideCard.Provider value>{child}</InsideCard.Provider>
+      <div className="a2ui-card-band h-[3px]" />
+      <div className="p-4">
+        <CardLevelContext.Provider value="card">{child}</CardLevelContext.Provider>
       </div>
     </div>
   );
 });
 
 /** Solid badges: goose's semantic colors are pastels, so glyphs are dark for contrast. */
-const TONE_STYLES: Record<IconTone, string> = {
+const BADGE_TONES: Record<IconTone, string> = {
   success: 'bg-background-success text-[#18181b]',
   warning: 'bg-background-warning text-[#18181b]',
   danger: 'bg-background-danger text-[#18181b]',
@@ -87,20 +97,34 @@ const TONE_STYLES: Record<IconTone, string> = {
   accent: 'a2ui-icon-accent',
 };
 
+/** Inside tiles, icons sit inline with text as plain glyphs instead of badges. */
+const GLYPH_TONES: Record<IconTone, string> = {
+  success: 'text-text-success',
+  warning: 'text-text-warning',
+  danger: 'text-text-danger',
+  info: 'text-text-info',
+  accent: 'a2ui-glyph-accent',
+};
+
 const GooseIcon = createComponentImplementation(IconApi, ({ props }) => {
+  const inTile = useContext(CardLevelContext) === 'tile';
   const name = typeof props.name === 'string' ? props.name : '';
   const Glyph = ICONS[name];
   if (!Glyph) {
     return null;
   }
+  const tone = toneOf(name);
+  if (inTile) {
+    return <Glyph className={cn('size-3.5 shrink-0', GLYPH_TONES[tone])} aria-hidden />;
+  }
   return (
     <span
       className={cn(
-        'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
-        TONE_STYLES[toneOf(name)]
+        'inline-flex size-6 shrink-0 items-center justify-center rounded-full',
+        BADGE_TONES[tone]
       )}
     >
-      <Glyph className="size-4" aria-hidden />
+      <Glyph className="size-3.5" aria-hidden />
     </span>
   );
 });

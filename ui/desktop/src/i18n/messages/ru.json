@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "Не удалось выполнить действие: {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "Выполняется…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Недавние"
   },

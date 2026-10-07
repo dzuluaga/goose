@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "कार्रवाई विफल रही: {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "प्रोसेस हो रहा है…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "हाल के"
   },

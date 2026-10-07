@@ -4631,6 +4631,9 @@
   "a2uiToolResult.actionFailed": {
     "defaultMessage": "L'action a échoué : {reason}"
   },
+  "a2uiToolResult.actionPending": {
+    "defaultMessage": "En cours…"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Récents"
   },
