@@ -2,9 +2,14 @@
 //
 // plan_deploy     Returns fallback text, plus a deploy confirmation surface as an
 //                 application/a2ui+json resource when the client advertises A2UI.
-// search_flights  Same pattern: flight options the user can book.
-// a2ui_action     Handles clicks from either surface (routed by surfaceId). Visible to
-//                 apps only. Rebuilds the card with the outcome in place of the buttons.
+// search_flights     Same pattern: flight options the user can book.
+// request_db_access  A form: access level, duration, ticket, acknowledgment. The grant
+//                    button stays disabled until the ticket and acknowledgment are valid.
+// start_return       A form: items, reason, refund method, pickup date, label email.
+// a2ui_action        Handles clicks from every surface (routed by surfaceId). Visible to
+//                    apps only. Rebuilds the card with the outcome in place of the buttons.
+//
+// All data is sample data.
 import { pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -66,6 +71,37 @@ function iconRow(id, iconName, title, detail, titleVariant = 'h5') {
     text(`${id}Title`, title, titleVariant),
     text(`${id}Detail`, detail, 'caption'),
   ];
+}
+
+/** A tinted tile holding an inline glyph and one line of (possibly bound) text. */
+function noteTile(id, iconName, value, variant = 'body') {
+  return [
+    { id, component: 'Card', child: `${id}Row` },
+    { id: `${id}Row`, component: 'Row', align: 'center', children: [`${id}Icon`, `${id}Text`] },
+    icon(`${id}Icon`, iconName),
+    text(`${id}Text`, value, variant),
+  ];
+}
+
+function boundText(template) {
+  return { call: 'formatString', args: { value: template }, returnType: 'string' };
+}
+
+function chips(id, label, options, path) {
+  return {
+    id,
+    component: 'ChoicePicker',
+    label,
+    displayStyle: 'chips',
+    options: options.map(([value, optionLabel]) => ({ value, label: optionLabel ?? value })),
+    value: { path },
+  };
+}
+
+/** A button that stays disabled until `condition` holds. */
+function gatedButton(id, label, event, options, condition, message) {
+  const [control, labelText] = button(id, label, event, options);
+  return [{ ...control, checks: [{ condition, message }] }, labelText];
 }
 
 function surface(surfaceId, theme, children, components, data) {
@@ -301,9 +337,398 @@ export function booking({ origin, destination, date }, flightId) {
   };
 }
 
+// ── Production DB access ─────────────────────────────────────────────────────────────
+
+const ACCESS_SURFACE_ID = 'db-access';
+const ACCESS_THEME = { primaryColor: '#B91C1C' };
+const ACCESS_LEVELS = [
+  ['replica', 'Read-only replica'],
+  ['debug', 'Debug session'],
+  ['schema', 'Schema only'],
+];
+const TICKET_IS_VALID = {
+  call: 'regex',
+  args: { value: { path: '/ticket' }, pattern: '^SEC-\\d{4,}$' },
+  returnType: 'boolean',
+};
+
+export function accessSurface({ database, purpose }) {
+  return surface(
+    ACCESS_SURFACE_ID,
+    ACCESS_THEME,
+    ['header', 'level', 'ttl', 'expiry', 'ticket', 'ack', 'divider', 'actions'],
+    [
+      ...iconRow(
+        'header',
+        'lock',
+        `Temporary access to ${database} (production)`,
+        `${purpose} · every query is recorded in the audit log`,
+        'h3'
+      ),
+      chips('level', 'Access level', ACCESS_LEVELS, '/level'),
+      {
+        id: 'ttl',
+        component: 'Slider',
+        label: 'Duration (minutes)',
+        min: 15,
+        max: 240,
+        value: { path: '/ttl' },
+      },
+      ...noteTile(
+        'expiry',
+        'lockOpen',
+        boundText('Access ends ${/ttl} minutes after you grant it, then is revoked automatically')
+      ),
+      {
+        id: 'ticket',
+        component: 'TextField',
+        label: 'Security ticket',
+        value: { path: '/ticket' },
+        checks: [{ condition: TICKET_IS_VALID, message: 'Use a security ticket, like SEC-4821' }],
+      },
+      {
+        id: 'ack',
+        component: 'CheckBox',
+        label: 'I will handle customer PII under the data-handling policy',
+        value: { path: '/ack' },
+      },
+      { id: 'divider', component: 'Divider' },
+      { id: 'actions', component: 'Row', children: ['grant', 'cancel'] },
+      ...gatedButton(
+        'grant',
+        'Grant access',
+        {
+          name: 'grant',
+          context: {
+            database: { path: '/database' },
+            level: { path: '/level' },
+            ttl: { path: '/ttl' },
+            ticket: { path: '/ticket' },
+          },
+        },
+        { variant: 'primary', accessibleName: `Grant temporary access to ${database}` },
+        {
+          call: 'and',
+          args: { values: [TICKET_IS_VALID, { path: '/ack' }] },
+          returnType: 'boolean',
+        },
+        'Add a security ticket and accept the data-handling policy'
+      ),
+      ...button(
+        'cancel',
+        'Cancel',
+        { name: 'cancel', context: { database: { path: '/database' } } },
+        { variant: 'borderless', accessibleName: 'Cancel this access request' }
+      ),
+    ],
+    { database, level: ['replica'], ttl: 60, ticket: '', ack: false }
+  );
+}
+
+function clockTime(at) {
+  return at.toISOString().slice(11, 16);
+}
+
+export function accessOutcome(name, context, at = new Date()) {
+  const database = String(context.database ?? 'orders-db');
+  if (name !== 'grant') {
+    const status =
+      name === 'revoke'
+        ? `Access to ${database} revoked`
+        : `Access request for ${database} cancelled`;
+    return {
+      status,
+      messages: replaceSurface(
+        ACCESS_SURFACE_ID,
+        surface(
+          ACCESS_SURFACE_ID,
+          ACCESS_THEME,
+          ['header'],
+          iconRow(
+            'header',
+            'close',
+            status,
+            `${clockTime(at)} UTC · logged to the audit trail`,
+            'h3'
+          )
+        )
+      ),
+    };
+  }
+  const levelValue = Array.isArray(context.level) ? context.level[0] : context.level;
+  const level = (ACCESS_LEVELS.find(([value]) => value === levelValue) ?? ACCESS_LEVELS[0])[1];
+  const ttl = Number(context.ttl ?? 60);
+  const ticket = String(context.ticket ?? '');
+  const expires = clockTime(new Date(at.getTime() + ttl * 60_000));
+  return {
+    status: `${level} access to ${database} granted until ${expires} UTC`,
+    messages: replaceSurface(
+      ACCESS_SURFACE_ID,
+      surface(
+        ACCESS_SURFACE_ID,
+        ACCESS_THEME,
+        ['header', 'session', 'audit', 'actions'],
+        [
+          ...iconRow(
+            'header',
+            'check',
+            `Access granted · ${level}`,
+            `${database} · ${ttl} min · revoked automatically at ${expires} UTC`,
+            'h3'
+          ),
+          { id: 'session', component: 'Card', child: 'sessionBody' },
+          { id: 'sessionBody', component: 'Column', children: ['sessionLabel', 'sessionValue'] },
+          text('sessionLabel', 'Session', 'caption'),
+          text('sessionValue', 'prod-tmp-8419', 'h2'),
+          ...iconRow(
+            'audit',
+            'info',
+            `Linked to ${ticket}`,
+            'Audit entry AUD-20931 · on-call lead notified'
+          ),
+          { id: 'actions', component: 'Row', children: ['revoke'] },
+          ...button(
+            'revoke',
+            'Revoke now',
+            { name: 'revoke', context: { database } },
+            { accessibleName: `Revoke access to ${database} now` }
+          ),
+        ]
+      )
+    ),
+  };
+}
+
+// ── Order return ─────────────────────────────────────────────────────────────────────
+
+const RETURN_SURFACE_ID = 'order-return';
+const RETURN_THEME = { primaryColor: '#1D4ED8' };
+const ORDER = {
+  id: 'A-48213',
+  delivered: 'Sep 30',
+  items: [
+    { id: 'headphones', name: 'Sony WH-1000XM5 · Black', price: 348 },
+    { id: 'cable', name: 'USB-C cable · 2 m', price: 19 },
+  ],
+};
+const REASONS = [['Defective'], ['Wrong item'], ['No longer needed']];
+const RESOLUTIONS = [['Refund to Visa ••4421'], ['Store credit'], ['Exchange']];
+
+function dollars(amount) {
+  return `$${amount.toFixed(2)}`;
+}
+
+function itemTile(item) {
+  const id = `item_${item.id}`;
+  return [
+    { id, component: 'Card', child: `${id}Row` },
+    { id: `${id}Row`, component: 'Row', align: 'center', children: [`${id}Check`, `${id}Price`] },
+    {
+      id: `${id}Check`,
+      component: 'CheckBox',
+      label: item.name,
+      value: { path: `/items/${item.id}` },
+      weight: 1,
+    },
+    text(`${id}Price`, dollars(item.price), 'h4'),
+  ];
+}
+
+export function returnSurface({ item }) {
+  const wanted = item.toLowerCase();
+  const selected = Object.fromEntries(
+    ORDER.items.map((candidate) => [
+      candidate.id,
+      candidate.name.toLowerCase().includes(wanted) || wanted.includes(candidate.id),
+    ])
+  );
+  const ready = {
+    call: 'and',
+    args: {
+      values: [
+        {
+          call: 'or',
+          args: { values: ORDER.items.map((i) => ({ path: `/items/${i.id}` })) },
+          returnType: 'boolean',
+        },
+        { call: 'required', args: { value: { path: '/reason' } }, returnType: 'boolean' },
+        { call: 'email', args: { value: { path: '/email' } }, returnType: 'boolean' },
+      ],
+    },
+    returnType: 'boolean',
+  };
+  return surface(
+    RETURN_SURFACE_ID,
+    RETURN_THEME,
+    ['header', 'items', 'reason', 'resolution', 'logistics', 'summary', 'divider', 'actions'],
+    [
+      ...iconRow(
+        'header',
+        'shoppingCart',
+        `Return items from order #${ORDER.id}`,
+        `Delivered ${ORDER.delivered} · free returns until Oct 30`,
+        'h3'
+      ),
+      { id: 'items', component: 'Column', children: ORDER.items.map((i) => `item_${i.id}`) },
+      ...ORDER.items.flatMap(itemTile),
+      chips('reason', 'Reason', REASONS, '/reason'),
+      chips('resolution', 'Resolution', RESOLUTIONS, '/resolution'),
+      { id: 'logistics', component: 'Row', children: ['pickup', 'email'] },
+      {
+        id: 'pickup',
+        component: 'DateTimeInput',
+        label: 'Courier pickup',
+        enableDate: true,
+        value: { path: '/pickup' },
+        min: '2026-10-08',
+        weight: 1,
+      },
+      {
+        id: 'email',
+        component: 'TextField',
+        label: 'Email the label to',
+        value: { path: '/email' },
+        weight: 1,
+        checks: [
+          {
+            condition: {
+              call: 'email',
+              args: { value: { path: '/email' } },
+              returnType: 'boolean',
+            },
+            message: 'Enter an email address',
+          },
+        ],
+      },
+      ...noteTile(
+        'summary',
+        'event',
+        boundText(
+          "${/resolution/0} · pickup ${formatDate(value: ${/pickup}, format: 'E, MMM d')} · label to ${/email}"
+        )
+      ),
+      { id: 'divider', component: 'Divider' },
+      { id: 'actions', component: 'Row', children: ['start', 'cancel'] },
+      ...gatedButton(
+        'start',
+        'Start return',
+        {
+          name: 'start',
+          context: {
+            items: { path: '/items' },
+            reason: { path: '/reason' },
+            resolution: { path: '/resolution' },
+            pickup: { path: '/pickup' },
+            email: { path: '/email' },
+          },
+        },
+        { variant: 'primary', accessibleName: `Start the return for order ${ORDER.id}` },
+        ready,
+        'Pick an item and a reason, and add an email'
+      ),
+      ...button(
+        'cancel',
+        'Cancel',
+        { name: 'cancel' },
+        { variant: 'borderless', accessibleName: 'Cancel this return' }
+      ),
+    ],
+    {
+      items: selected,
+      reason: [],
+      resolution: [RESOLUTIONS[0][0]],
+      pickup: '2026-10-09',
+      email: 'dana@example.com',
+    }
+  );
+}
+
+function shortDate(isoDate) {
+  const date = new Date(`${isoDate}T12:00:00Z`);
+  return Number.isNaN(date.getTime())
+    ? isoDate
+    : date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      });
+}
+
+export function returnOutcome(name, context) {
+  if (name === 'cancel') {
+    const status = `Return for order #${ORDER.id} cancelled`;
+    return {
+      status,
+      messages: replaceSurface(
+        RETURN_SURFACE_ID,
+        surface(
+          RETURN_SURFACE_ID,
+          RETURN_THEME,
+          ['header'],
+          iconRow('header', 'close', status, 'Nothing was changed', 'h3')
+        )
+      ),
+    };
+  }
+  if (name !== 'start') {
+    return { status: `${name} isn't available in this demo` };
+  }
+  const chosen = ORDER.items.filter((item) => context.items?.[item.id] === true);
+  const total = chosen.reduce((sum, item) => sum + item.price, 0);
+  const resolution = Array.isArray(context.resolution) ? context.resolution[0] : RESOLUTIONS[0][0];
+  const pickup = shortDate(String(context.pickup ?? ''));
+  const email = String(context.email ?? '');
+  return {
+    status: `Return approved: RMA-77310 · ${dollars(total)} · ${resolution}`,
+    messages: replaceSurface(
+      RETURN_SURFACE_ID,
+      surface(
+        RETURN_SURFACE_ID,
+        RETURN_THEME,
+        ['header', 'refund', 'pickup', 'label', 'packing', 'actions'],
+        [
+          ...iconRow(
+            'header',
+            'check',
+            'Return approved · RMA-77310',
+            chosen.map((item) => item.name).join(', '),
+            'h3'
+          ),
+          { id: 'refund', component: 'Card', child: 'refundBody' },
+          { id: 'refundBody', component: 'Column', children: ['refundLabel', 'refundValue'] },
+          text('refundLabel', `${resolution} · within 5 business days`, 'caption'),
+          text('refundValue', dollars(total), 'h2'),
+          ...iconRow(
+            'pickup',
+            'event',
+            `Courier pickup ${pickup}`,
+            '9 am – 5 pm · leave the box at the door'
+          ),
+          ...iconRow('label', 'mail', `Label sent to ${email}`, 'Print it and tape it to the box'),
+          ...iconRow(
+            'packing',
+            'warning',
+            'Pack everything in the original box',
+            'Include the case and all cables'
+          ),
+          { id: 'actions', component: 'Row', children: ['download', 'reschedule'] },
+          ...button('download', 'Download label', { name: 'download' }, { variant: 'borderless' }),
+          ...button(
+            'reschedule',
+            'Change pickup',
+            { name: 'reschedule' },
+            { variant: 'borderless' }
+          ),
+        ]
+      )
+    ),
+  };
+}
+
 // ── MCP server ───────────────────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: 'a2ui-demo', version: '0.5.0' });
+const server = new McpServer({ name: 'a2ui-demo', version: '0.6.0' });
 
 server.registerTool(
   'plan_deploy',
@@ -361,6 +786,61 @@ server.registerTool(
 );
 
 server.registerTool(
+  'request_db_access',
+  {
+    title: 'Request production database access',
+    description: 'Request temporary, audited access to a production database.',
+    inputSchema: {
+      database: z.string().default('orders-db').describe('Database name, e.g. orders-db'),
+      purpose: z.string().describe('Why access is needed, in a few words'),
+    },
+  },
+  async (args, extra) => {
+    const levels = ACCESS_LEVELS.map(([, label]) => label).join(', ');
+    const facts =
+      `Temporary access to ${args.database} (production) needs an access level (${levels}), ` +
+      'a duration of 15–240 minutes, a security ticket like SEC-1234, and acknowledgment of ' +
+      'the PII data-handling policy.';
+    if (!clientRendersA2ui(extra._meta)) {
+      return { content: [{ type: 'text', text: `${facts} Collect these from the user.` }] };
+    }
+    return {
+      content: [
+        { type: 'text', text: `${facts} ${CARD_IS_SOURCE_OF_TRUTH}` },
+        a2uiResource(accessSurface(args), ACCESS_SURFACE_ID),
+      ],
+    };
+  }
+);
+
+server.registerTool(
+  'start_return',
+  {
+    title: 'Start a return',
+    description: "Start a return for items in the user's most recent order.",
+    inputSchema: {
+      item: z.string().describe('The item to return, e.g. headphones'),
+    },
+  },
+  async (args, extra) => {
+    const items = ORDER.items.map((i) => `${i.name} (${dollars(i.price)})`).join(', ');
+    const facts =
+      `Order #${ORDER.id}, delivered ${ORDER.delivered}: ${items}. A return needs the items, ` +
+      `a reason (${REASONS.flat().join(', ')}), a resolution (${RESOLUTIONS.flat().join(', ')}), ` +
+      'a courier pickup date, and an email for the label.';
+    if (!clientRendersA2ui(extra._meta)) {
+      return { content: [{ type: 'text', text: `${facts} Collect these from the user.` }] };
+    }
+    return {
+      content: [
+        { type: 'text', text: `${facts} ${CARD_IS_SOURCE_OF_TRUTH}` },
+        a2uiResource(returnSurface(args), RETURN_SURFACE_ID),
+      ],
+    };
+  }
+);
+
+server.registerTool(
   'a2ui_action',
   {
     description: 'Handles user actions from A2UI surfaces rendered by the client.',
@@ -375,6 +855,18 @@ server.registerTool(
   },
   async ({ name, surfaceId, context }) => {
     const value = (key, fallback = '') => String(context[key] ?? fallback);
+    if (surfaceId === ACCESS_SURFACE_ID || surfaceId === RETURN_SURFACE_ID) {
+      const outcome =
+        surfaceId === ACCESS_SURFACE_ID
+          ? accessOutcome(name, context)
+          : returnOutcome(name, context);
+      return {
+        content: [
+          { type: 'text', text: outcome.status },
+          ...(outcome.messages ? [a2uiResource(outcome.messages, surfaceId)] : []),
+        ],
+      };
+    }
     if (surfaceId === TRIP_SURFACE_ID) {
       if (name !== 'book') {
         return { content: [{ type: 'text', text: `${name} isn't available in this demo` }] };

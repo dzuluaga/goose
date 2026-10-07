@@ -5,12 +5,30 @@ import {
   type ReactComponentImplementation,
 } from '@a2ui/react/v0_9';
 import { Catalog } from '@a2ui/web_core/v0_9';
-import { ButtonApi, CardApi, IconApi, TextApi } from '@a2ui/web_core/v0_9/basic_catalog';
+import {
+  ButtonApi,
+  CardApi,
+  CheckBoxApi,
+  ChoicePickerApi,
+  DateTimeInputApi,
+  IconApi,
+  SliderApi,
+  TextApi,
+  TextFieldApi,
+} from '@a2ui/web_core/v0_9/basic_catalog';
 import { cn } from '../../utils';
 import { Button } from '../ui/button';
 import { resolveAccent } from './a2uiAccent';
+import { weightStyle } from './a2uiLayout';
 import { A2uiActionPending } from './a2uiActionState';
 import { ICONS, toneOf, type IconTone } from './gooseIcons';
+import {
+  GooseCheckBox,
+  GooseChoicePicker,
+  GooseDateTimeInput,
+  GooseSlider,
+  GooseTextField,
+} from './gooseInputs';
 
 const BUTTON_VARIANTS = {
   primary: 'default',
@@ -64,8 +82,7 @@ const CardLevelContext = createContext<CardLevel>('top');
 const GooseCard = createComponentImplementation(CardApi, ({ props, buildChild, context }) => {
   const level = useContext(CardLevelContext);
   const child = props.child ? buildChild(props.child) : null;
-  const weight: CSSProperties | undefined =
-    typeof props.weight === 'number' ? { flex: props.weight, minWidth: 0 } : undefined;
+  const weight = weightStyle(props.weight);
   if (level !== 'top') {
     return (
       <div className="a2ui-tile rounded-lg px-3 py-2.5" style={weight}>
@@ -132,8 +149,13 @@ const GooseIcon = createComponentImplementation(IconApi, ({ props }) => {
 const OVERRIDES = new Map<string, ReactComponentImplementation>([
   [ButtonApi.name, GooseButton],
   [CardApi.name, GooseCard],
+  [CheckBoxApi.name, GooseCheckBox],
+  [ChoicePickerApi.name, GooseChoicePicker],
+  [DateTimeInputApi.name, GooseDateTimeInput],
   [IconApi.name, GooseIcon],
+  [SliderApi.name, GooseSlider],
   [TextApi.name, GooseText],
+  [TextFieldApi.name, GooseTextField],
 ]);
 
 /**

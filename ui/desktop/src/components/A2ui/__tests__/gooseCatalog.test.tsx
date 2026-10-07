@@ -36,12 +36,22 @@ describe('gooseCatalog', () => {
     );
   });
 
-  it('replaces Button, Card, Icon and Text with goose implementations', () => {
+  it('replaces every component goose draws with a goose implementation', () => {
     const replaced = [...gooseCatalog.components.keys()].filter(
       (name) => gooseCatalog.components.get(name) !== basicCatalog.components.get(name)
     );
 
-    expect(replaced.sort()).toEqual(['Button', 'Card', 'Icon', 'Text']);
+    expect(replaced.sort()).toEqual([
+      'Button',
+      'Card',
+      'CheckBox',
+      'ChoicePicker',
+      'DateTimeInput',
+      'Icon',
+      'Slider',
+      'Text',
+      'TextField',
+    ]);
   });
 
   it('renders a primary button with goose styling and an inheriting label', async () => {

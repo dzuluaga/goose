@@ -55,3 +55,34 @@
 .a2ui-card[data-accent] .a2ui-button-primary:hover {
   background-color: color-mix(in srgb, var(--a2ui-accent) 88%, black);
 }
+
+/* Inputs take the accent for their selected state, falling back to goose's inverse color. */
+.a2ui-check,
+.a2ui-range {
+  accent-color: var(--a2ui-accent, var(--color-background-inverse));
+}
+
+.a2ui-chip {
+  border-color: var(--color-border-primary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+}
+
+.a2ui-chip:hover {
+  border-color: var(--color-border-secondary);
+}
+
+.a2ui-chip-selected,
+.a2ui-chip-selected:hover {
+  border-color: var(--a2ui-accent, var(--color-background-inverse));
+  background: var(--a2ui-accent, var(--color-background-inverse));
+  color: #fff;
+}
+
+.a2ui-card:not([data-accent]) .a2ui-chip-selected {
+  color: var(--color-text-inverse);
+}
+
+.a2ui-date {
+  color-scheme: light dark;
+}
