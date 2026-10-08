@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "Đang xử lý…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "Sau thao tác của bạn"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Thẻ tương tác từ {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Thẻ tương tác"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Hiển thị dạng"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Thẻ"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Văn bản"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Gần đây"
   },

@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "In corso…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "Dopo la tua azione"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Scheda interattiva da {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Scheda interattiva"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Mostra come"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Scheda"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Testo"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Recenti"
   },

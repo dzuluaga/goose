@@ -42,7 +42,8 @@ describe('A2uiToolResultSlot', () => {
     acpReadConfig.mockResolvedValue(true);
     renderSlot(A2UI_CONTENT);
 
-    expect(await screen.findByText('Ship v2.3?')).toBeInTheDocument();
+    // The renderer is lazy-loaded, so the first render waits on a dynamic import.
+    expect(await screen.findByText('Ship v2.3?', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(acpReadConfig).toHaveBeenCalledWith('GOOSE_EXPERIMENTAL_A2UI');
   });
 

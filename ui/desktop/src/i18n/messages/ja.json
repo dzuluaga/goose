@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "処理中…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "操作後"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "{source} のインタラクティブカード"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "インタラクティブカード"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "表示形式"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "カード"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "テキスト"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "最近"
   },

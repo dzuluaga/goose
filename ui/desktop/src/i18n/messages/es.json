@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "Procesando…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "Después de tu acción"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Tarjeta interactiva de {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Tarjeta interactiva"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Mostrar como"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Tarjeta"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Texto"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Recientes"
   },

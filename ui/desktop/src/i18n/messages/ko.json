@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "처리 중…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "작업 후"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "{source}의 대화형 카드"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "대화형 카드"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "표시 형식"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "카드"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "텍스트"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "최근"
   },

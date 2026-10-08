@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "Sedang diproses…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "Selepas tindakan anda"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Kad interaktif daripada {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Kad interaktif"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Tunjukkan sebagai"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Kad"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Teks"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Terkini"
   },

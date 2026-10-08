@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "İşleniyor…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "İşleminizden sonra"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "{source} kaynaklı etkileşimli kart"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Etkileşimli kart"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Şu şekilde göster"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Kart"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Metin"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Son kullanılan"
   },

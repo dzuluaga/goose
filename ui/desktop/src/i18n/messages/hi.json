@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "प्रोसेस हो रहा है…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "आपकी कार्रवाई के बाद"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "{source} से इंटरैक्टिव कार्ड"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "इंटरैक्टिव कार्ड"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "इस रूप में दिखाएँ"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "कार्ड"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "टेक्स्ट"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "हाल के"
   },

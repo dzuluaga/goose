@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "Выполняется…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "После вашего действия"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Интерактивная карточка от {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Интерактивная карточка"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Показать как"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Карточка"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Текст"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Недавние"
   },

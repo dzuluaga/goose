@@ -18,10 +18,16 @@ import { z } from 'zod';
 const A2UI_MIME_TYPE = 'application/a2ui+json';
 const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
 
-/** Sent with every surface, so the model neither repeats the card nor asks what it asks. */
-const CARD_IS_SOURCE_OF_TRUTH =
-  'The user sees an interactive card with these details; it is the source of truth. ' +
-  'Do not restate its contents or ask the user to choose. Reply with at most one short sentence.';
+/**
+ * The fallback text is read by the model and, through the client's Text view, by people, so it
+ * states facts only. Guidance for the model lives in the server instructions instead.
+ */
+const SHOWN_AS_CARD = 'Shown to the user as an interactive card.';
+
+const SERVER_INSTRUCTIONS =
+  'When a tool result says it is shown to the user as an interactive card, the user already ' +
+  'sees every detail and acts in the card. Do not restate the details or ask the user to ' +
+  'choose; reply with at most one short sentence.';
 
 export function clientRendersA2ui(meta) {
   const catalogs = meta?.a2ui?.clientCapabilities?.['v0.9']?.supportedCatalogIds;
@@ -728,7 +734,10 @@ export function returnOutcome(name, context) {
 
 // ── MCP server ───────────────────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: 'a2ui-demo', version: '0.6.0' });
+const server = new McpServer(
+  { name: 'a2ui-demo', version: '0.7.0' },
+  { instructions: SERVER_INSTRUCTIONS }
+);
 
 server.registerTool(
   'plan_deploy',
@@ -750,7 +759,7 @@ server.registerTool(
     }
     return {
       content: [
-        { type: 'text', text: `${facts} ${CARD_IS_SOURCE_OF_TRUTH}` },
+        { type: 'text', text: `${facts} ${SHOWN_AS_CARD}` },
         a2uiResource(deploySurface(args), DEPLOY_SURFACE_ID),
       ],
     };
@@ -778,7 +787,7 @@ server.registerTool(
     }
     return {
       content: [
-        { type: 'text', text: `${facts} ${CARD_IS_SOURCE_OF_TRUTH}` },
+        { type: 'text', text: `${facts} ${SHOWN_AS_CARD}` },
         a2uiResource(tripSurface(args), TRIP_SURFACE_ID),
       ],
     };
@@ -806,7 +815,7 @@ server.registerTool(
     }
     return {
       content: [
-        { type: 'text', text: `${facts} ${CARD_IS_SOURCE_OF_TRUTH}` },
+        { type: 'text', text: `${facts} ${SHOWN_AS_CARD}` },
         a2uiResource(accessSurface(args), ACCESS_SURFACE_ID),
       ],
     };
@@ -833,7 +842,7 @@ server.registerTool(
     }
     return {
       content: [
-        { type: 'text', text: `${facts} ${CARD_IS_SOURCE_OF_TRUTH}` },
+        { type: 'text', text: `${facts} ${SHOWN_AS_CARD}` },
         a2uiResource(returnSurface(args), RETURN_SURFACE_ID),
       ],
     };

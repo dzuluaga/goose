@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "處理中…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "操作之後"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "來自 {source} 的互動式卡片"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "互動式卡片"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "顯示為"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "卡片"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "文字"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "最近"
   },

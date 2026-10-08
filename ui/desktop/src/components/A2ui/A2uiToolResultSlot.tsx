@@ -57,7 +57,9 @@ export function A2uiToolResultSlot({
         <A2uiToolResult
           key={`${payload.uri}-${index}`}
           initialMessages={payload.messages}
+          fallbackText={fallbackText}
           fallback={fallback}
+          source={extensionName || undefined}
           actionTarget={actionTarget}
         />
       ))}

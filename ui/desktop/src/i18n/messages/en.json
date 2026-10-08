@@ -5,6 +5,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "Working…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "After your action"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Interactive card from {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Interactive card"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Show as"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Card"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Text"
+  },
   "acpReadinessPanel.adapterFound": {
     "defaultMessage": "ACP adapter found"
   },

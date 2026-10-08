@@ -4634,6 +4634,24 @@
   "a2uiToolResult.actionPending": {
     "defaultMessage": "En cours…"
   },
+  "a2uiToolResult.afterAction": {
+    "defaultMessage": "Après votre action"
+  },
+  "a2uiToolResult.source": {
+    "defaultMessage": "Carte interactive de {source}"
+  },
+  "a2uiToolResult.sourceUnknown": {
+    "defaultMessage": "Carte interactive"
+  },
+  "a2uiToolResult.viewAs": {
+    "defaultMessage": "Afficher en"
+  },
+  "a2uiToolResult.viewCard": {
+    "defaultMessage": "Carte"
+  },
+  "a2uiToolResult.viewText": {
+    "defaultMessage": "Texte"
+  },
   "modelsBottomBar.recentModels": {
     "defaultMessage": "Récents"
   },
