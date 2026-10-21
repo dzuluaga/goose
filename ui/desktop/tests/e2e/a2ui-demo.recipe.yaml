@@ -1,0 +1,24 @@
+version: 1.0.0
+title: A2UI demo
+description: Loads the A2UI demo server so its tool results render as interactive cards.
+
+instructions: |
+  Use the a2ui-demo tools to answer. When a tool returns a card, tell the user to review and
+  act on it in the card rather than repeating its contents.
+
+prompt: Plan a deploy of api-gateway v2.3
+
+activities:
+  - Plan a deploy of api-gateway v2.3
+  - Find flights from SFO to JFK next Friday
+  - Request read access to the orders database
+  - Start a return for order 1042
+
+extensions:
+  - type: stdio
+    name: a2ui-demo
+    cmd: node
+    args:
+      - /Users/diegozuluaga/tools/git/goose/.claude/worktrees/a2ui-checks/ui/desktop/tests/e2e/a2ui-mcp.mjs
+    timeout: 60
+    description: A2UI-over-MCP demo server
