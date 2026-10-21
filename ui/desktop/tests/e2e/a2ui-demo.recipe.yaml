@@ -3,8 +3,7 @@ title: A2UI demo
 description: Loads the A2UI demo server so its tool results render as interactive cards.
 
 instructions: |
-  Use the a2ui-demo tools to answer. When a tool returns a card, tell the user to review and
-  act on it in the card rather than repeating its contents.
+  Use the a2ui-demo tools to answer. Summarize each tool result in one sentence.
 
 prompt: Plan a deploy of api-gateway v2.3
 
